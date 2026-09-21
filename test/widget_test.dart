@@ -161,5 +161,40 @@ void main() {
       expect(find.text('Ana Souza'), findsNothing);
       expect(find.text('Bruno Lima'), findsOneWidget);
     });
+
+    // REGRESSÃO: garante que, ao cadastrar pelo formulário, a lista atualiza
+    // SEM precisar reabrir o app. Esse teste teria pego o bug do `setState`
+    // que retornava um Future (o refresh não era aplicado).
+    testWidgets('cadastrar pelo formulário atualiza a lista na hora',
+        (tester) async {
+      await tester.pumpWidget(PortalCidadaoApp(
+        temaInicialEscuro: false,
+        repository: FakePoliticoRepository(),
+      ));
+      await tester.pumpAndSettle();
+
+      // Começa vazio.
+      expect(find.text('Nenhum político salvo offline'), findsOneWidget);
+
+      // Abre o formulário (FAB).
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      // Preenche os campos.
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Nome'), 'Carlos Dias');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Partido'), 'PC');
+      await tester.enterText(find.widgetWithText(TextFormField, 'UF'), 'RS');
+
+      // Salva.
+      await tester.tap(find.text('Salvar no banco offline'));
+      await tester.pumpAndSettle();
+
+      // A lista atualizou sem reabrir o app.
+      expect(find.text('Nenhum político salvo offline'), findsNothing);
+      expect(find.text('Carlos Dias'), findsOneWidget);
+      expect(find.text('PC • RS'), findsOneWidget);
+    });
   });
 }

@@ -56,7 +56,13 @@ class _HomePageState extends State<HomePage> {
 
   /// Reatribui o Future -> o FutureBuilder relê o banco.
   void _recarregar() {
-    setState(() => _futurePoliticos = _repository.getAll());
+    // IMPORTANTE: usar corpo de bloco `{ }` e NÃO `=>`.
+    // Com arrow (`=> _futurePoliticos = ...`) o callback RETORNA o valor da
+    // atribuição (um Future), e o setState rejeita callbacks que retornam
+    // Future — lançando exceção e deixando de aplicar a atualização.
+    setState(() {
+      _futurePoliticos = _repository.getAll();
+    });
   }
 
   void _mostrarSnack(String mensagem) {
