@@ -1,23 +1,33 @@
 // =============================================================================
-// WIDGET — PoliticoForm (BottomSheet de cadastro)
+// WIDGET — PoliticoForm (BottomSheet de cadastro/edição)
 // -----------------------------------------------------------------------------
-// Formulário com validação. Ao confirmar, devolve um PoliticoModel via
-// Navigator.pop(context, model). Quem grava no banco é a camada de dados
-// (chamada pela HomePage) — o form só coleta e valida.
+// Formulário com validação. Funciona em DOIS modos:
+//   • CRIAR  -> `politico` == null  -> campos vazios, título "Cadastrar".
+//   • EDITAR -> `politico` != null  -> campos pré-preenchidos, título "Editar",
+//               e o objeto devolvido mantém o `id` original (para o UPDATE).
+//
+// Ao confirmar, devolve um PoliticoModel via Navigator.pop(context, model).
+// Quem grava no banco (insert/update) é a HomePage — o form só coleta e valida.
 // =============================================================================
 import 'package:flutter/material.dart';
 import '../../models/politico_model.dart';
 
 class PoliticoForm extends StatefulWidget {
-  const PoliticoForm({super.key});
+  /// Político a editar. Se null, o formulário está em modo de CRIAÇÃO.
+  final PoliticoModel? politico;
 
-  /// Abre o formulário como modal e retorna o político criado (ou null).
-  static Future<PoliticoModel?> mostrar(BuildContext context) {
+  const PoliticoForm({super.key, this.politico});
+
+  /// Abre o formulário como modal e retorna o político criado/editado (ou null).
+  static Future<PoliticoModel?> mostrar(
+    BuildContext context, {
+    PoliticoModel? politico,
+  }) {
     return showModalBottomSheet<PoliticoModel>(
       context: context,
       isScrollControlled: true, // acompanha o teclado
       showDragHandle: true,
-      builder: (_) => const PoliticoForm(),
+      builder: (_) => PoliticoForm(politico: politico),
     );
   }
 
@@ -27,9 +37,21 @@ class PoliticoForm extends StatefulWidget {
 
 class _PoliticoFormState extends State<PoliticoForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
-  final _partidoController = TextEditingController();
-  final _ufController = TextEditingController();
+  late final TextEditingController _nomeController;
+  late final TextEditingController _partidoController;
+  late final TextEditingController _ufController;
+
+  bool get _editando => widget.politico != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pré-preenche os campos quando estamos editando.
+    _nomeController = TextEditingController(text: widget.politico?.nome ?? '');
+    _partidoController =
+        TextEditingController(text: widget.politico?.partido ?? '');
+    _ufController = TextEditingController(text: widget.politico?.uf ?? '');
+  }
 
   @override
   void dispose() {
@@ -43,12 +65,14 @@ class _PoliticoFormState extends State<PoliticoForm> {
     // validate() dispara todos os `validator` dos campos.
     if (!_formKey.currentState!.validate()) return;
 
-    final novo = PoliticoModel(
+    final resultado = PoliticoModel(
+      // Preserva o id ao editar (necessário para o UPDATE no banco).
+      id: widget.politico?.id,
       nome: _nomeController.text.trim(),
       partido: _partidoController.text.trim(),
       uf: _ufController.text.trim().toUpperCase(),
     );
-    Navigator.pop(context, novo);
+    Navigator.pop(context, resultado);
   }
 
   @override
@@ -65,7 +89,7 @@ class _PoliticoFormState extends State<PoliticoForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Cadastrar político',
+              _editando ? 'Editar político' : 'Cadastrar político',
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
@@ -118,8 +142,10 @@ class _PoliticoFormState extends State<PoliticoForm> {
             const SizedBox(height: 8),
             FilledButton.icon(
               onPressed: _salvar,
-              icon: const Icon(Icons.save),
-              label: const Text('Salvar no banco offline'),
+              icon: Icon(_editando ? Icons.check : Icons.save),
+              label: Text(_editando
+                  ? 'Salvar alterações'
+                  : 'Salvar no banco offline'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),

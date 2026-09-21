@@ -35,6 +35,18 @@ class PoliticoRepository implements IPoliticoRepository {
     return linhas.map(PoliticoModel.fromMap).toList();
   }
 
+  /// UPDATE — atualiza um político existente (pelo id). Retorna nº de linhas.
+  @override
+  Future<int> update(PoliticoModel politico) async {
+    final db = await _helper.database;
+    return db.update(
+      DatabaseHelper.tabelaPoliticos,
+      politico.toMap(),
+      where: 'id = ?',
+      whereArgs: [politico.id],
+    );
+  }
+
   /// DELETE — remove por id. `whereArgs` evita SQL Injection.
   @override
   Future<int> delete(int id) async {

@@ -10,11 +10,13 @@ import '../../models/politico_model.dart';
 class PoliticoCard extends StatelessWidget {
   final PoliticoModel politico;
   final VoidCallback onRemover;
+  final VoidCallback onEditar;
 
   const PoliticoCard({
     super.key,
     required this.politico,
     required this.onRemover,
+    required this.onEditar,
   });
 
   @override
@@ -25,6 +27,8 @@ class PoliticoCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
+        // Tocar no card também abre a edição (atalho comum em apps).
+        onTap: onEditar,
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
@@ -38,10 +42,21 @@ class PoliticoCard extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text('${politico.partido} • ${politico.uf}'),
-        trailing: IconButton(
-          tooltip: 'Remover',
-          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-          onPressed: onRemover,
+        // Dois botões: editar (lápis) e remover (lixeira).
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Editar',
+              icon: Icon(Icons.edit_outlined, color: theme.colorScheme.primary),
+              onPressed: onEditar,
+            ),
+            IconButton(
+              tooltip: 'Remover',
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              onPressed: onRemover,
+            ),
+          ],
         ),
       ),
     );

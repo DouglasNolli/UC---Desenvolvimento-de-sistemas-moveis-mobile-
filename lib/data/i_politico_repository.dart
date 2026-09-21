@@ -11,5 +11,6 @@ import '../models/politico_model.dart';
 abstract class IPoliticoRepository {
   Future<int> insert(PoliticoModel politico);
   Future<List<PoliticoModel>> getAll();
+  Future<int> update(PoliticoModel politico);
   Future<int> delete(int id);
 }

@@ -85,6 +85,15 @@ class _HomePageState extends State<HomePage> {
     _recarregar();
   }
 
+  /// Abre o formulário em modo EDIÇÃO (pré-preenchido) e aplica o UPDATE.
+  Future<void> _editar(PoliticoModel politico) async {
+    final editado = await PoliticoForm.mostrar(context, politico: politico);
+    if (editado == null) return;
+    await _repository.update(editado);
+    _mostrarSnack('✏️ "${editado.nome}" atualizado no banco offline.');
+    _recarregar();
+  }
+
   Future<void> _confirmarRemocao(PoliticoModel politico) async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -224,6 +233,7 @@ class _HomePageState extends State<HomePage> {
                     final politico = lista[index];
                     return PoliticoCard(
                       politico: politico,
+                      onEditar: () => _editar(politico),
                       onRemover: () => _confirmarRemocao(politico),
                     );
                   },

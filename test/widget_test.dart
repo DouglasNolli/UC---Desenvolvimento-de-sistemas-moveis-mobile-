@@ -43,6 +43,14 @@ class FakePoliticoRepository implements IPoliticoRepository {
   }
 
   @override
+  Future<int> update(PoliticoModel politico) async {
+    final i = _dados.indexWhere((p) => p.id == politico.id);
+    if (i < 0) return 0;
+    _dados[i] = politico;
+    return 1;
+  }
+
+  @override
   Future<int> delete(int id) async {
     final antes = _dados.length;
     _dados.removeWhere((p) => p.id == id);
@@ -85,6 +93,30 @@ void main() {
       expect(removidos, 1);
       lista = await repo.getAll();
       expect(lista, isEmpty);
+    });
+
+    test('atualiza (UPDATE) um político existente', () async {
+      final repo = PoliticoRepository();
+      for (final p in await repo.getAll()) {
+        await repo.delete(p.id!);
+      }
+
+      final id = await repo.insert(
+        const PoliticoModel(nome: 'Antigo Nome', partido: 'PA', uf: 'AM'),
+      );
+
+      // Atualiza mantendo o mesmo id.
+      final linhas = await repo.update(
+        PoliticoModel(id: id, nome: 'Novo Nome', partido: 'PB', uf: 'BA'),
+      );
+      expect(linhas, 1);
+
+      final lista = await repo.getAll();
+      expect(lista.length, 1);
+      expect(lista.first.id, id); // mesmo registro
+      expect(lista.first.nome, 'Novo Nome');
+      expect(lista.first.partido, 'PB');
+      expect(lista.first.uf, 'BA');
     });
   });
 
@@ -195,6 +227,38 @@ void main() {
       expect(find.text('Nenhum político salvo offline'), findsNothing);
       expect(find.text('Carlos Dias'), findsOneWidget);
       expect(find.text('PC • RS'), findsOneWidget);
+    });
+
+    testWidgets('editar pelo formulário atualiza o card', (tester) async {
+      final fake = FakePoliticoRepository();
+      await fake.insert(
+        const PoliticoModel(nome: 'Nome Antigo', partido: 'PA', uf: 'AM'),
+      );
+
+      await tester.pumpWidget(PortalCidadaoApp(
+        temaInicialEscuro: false,
+        repository: fake,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nome Antigo'), findsOneWidget);
+
+      // Abre a edição pelo botão de lápis.
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+
+      // O formulário abre em modo edição, pré-preenchido.
+      expect(find.text('Editar político'), findsOneWidget);
+
+      // Altera o nome e salva.
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Nome'), 'Nome Novo');
+      await tester.tap(find.text('Salvar alterações'));
+      await tester.pumpAndSettle();
+
+      // O card reflete a alteração, sem duplicar registros.
+      expect(find.text('Nome Antigo'), findsNothing);
+      expect(find.text('Nome Novo'), findsOneWidget);
     });
   });
 }
