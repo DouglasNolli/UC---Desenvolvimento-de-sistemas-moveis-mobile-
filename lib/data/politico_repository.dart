@@ -7,8 +7,9 @@
 // =============================================================================
 import '../models/politico_model.dart';
 import 'database_helper.dart';
+import 'i_politico_repository.dart';
 
-class PoliticoRepository {
+class PoliticoRepository implements IPoliticoRepository {
   final DatabaseHelper _helper;
 
   // Injeção de dependência com default para o Singleton (facilita testes).
@@ -16,12 +17,14 @@ class PoliticoRepository {
       : _helper = helper ?? DatabaseHelper.instance;
 
   /// CREATE — insere um político e retorna o id gerado.
+  @override
   Future<int> insert(PoliticoModel politico) async {
     final db = await _helper.database;
     return db.insert(DatabaseHelper.tabelaPoliticos, politico.toMap());
   }
 
   /// READ — lê todos os políticos ordenados por nome.
+  @override
   Future<List<PoliticoModel>> getAll() async {
     final db = await _helper.database;
     final linhas = await db.query(
@@ -33,6 +36,7 @@ class PoliticoRepository {
   }
 
   /// DELETE — remove por id. `whereArgs` evita SQL Injection.
+  @override
   Future<int> delete(int id) async {
     final db = await _helper.database;
     return db.delete(

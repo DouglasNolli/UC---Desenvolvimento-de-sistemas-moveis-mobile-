@@ -7,6 +7,7 @@
 // =============================================================================
 import 'package:flutter/material.dart';
 
+import '../data/i_politico_repository.dart';
 import '../data/politico_repository.dart';
 import '../models/politico_model.dart';
 import 'widgets/empty_state.dart';
@@ -17,10 +18,14 @@ class HomePage extends StatefulWidget {
   final bool isDarkMode;
   final Future<void> Function() onAlternarTema;
 
+  /// Repositório injetável. Em produção usa o SQLite; em testes, um fake.
+  final IPoliticoRepository? repository;
+
   const HomePage({
     super.key,
     required this.isDarkMode,
     required this.onAlternarTema,
+    this.repository,
   });
 
   @override
@@ -28,7 +33,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final PoliticoRepository _repository = PoliticoRepository();
+  late final IPoliticoRepository _repository =
+      widget.repository ?? PoliticoRepository();
 
   // O Future observado pelo FutureBuilder. Trocá-lo força uma releitura.
   late Future<List<PoliticoModel>> _futurePoliticos;

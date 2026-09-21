@@ -6,12 +6,21 @@
 // =============================================================================
 import 'package:flutter/material.dart';
 
+import 'data/i_politico_repository.dart';
 import 'data/theme_preferences.dart';
 import 'ui/home_page.dart';
 
 class PortalCidadaoApp extends StatefulWidget {
   final bool temaInicialEscuro;
-  const PortalCidadaoApp({super.key, required this.temaInicialEscuro});
+
+  /// Repositório injetável (opcional). Usado nos testes de UI.
+  final IPoliticoRepository? repository;
+
+  const PortalCidadaoApp({
+    super.key,
+    required this.temaInicialEscuro,
+    this.repository,
+  });
 
   @override
   State<PortalCidadaoApp> createState() => _PortalCidadaoAppState();
@@ -55,6 +64,7 @@ class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
       home: HomePage(
         isDarkMode: _isDarkMode,
         onAlternarTema: _alternarTema,
+        repository: widget.repository,
       ),
     );
   }

@@ -17,7 +17,8 @@ migrate_working_dir/
 .idea/
 .vscode/
 
-# Flutter/Dart/Pub
+# Flutter/Dart/Pub — apenas artefatos de build e cache (NÃO ignoramos as
+# pastas de plataforma android/ios/macos/web, pois os alunos precisam delas).
 **/doc/api/
 .dart_tool/
 .flutter-plugins
@@ -25,15 +26,27 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 build/
-pubspec.lock
 
-# Android
-android/
-# iOS
-ios/
-# Others
-linux/
-macos/
-windows/
-web/
-test/
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# Android Studio / Gradle
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+
+# iOS / macOS (CocoaPods e artefatos gerados)
+**/ios/Pods/
+**/macos/Pods/
+**/ios/.symlinks/
+**/macos/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.pbxuser
