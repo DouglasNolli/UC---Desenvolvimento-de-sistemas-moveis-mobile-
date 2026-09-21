@@ -16,9 +16,12 @@ O usuário pode **cadastrar, listar, pesquisar e remover** políticos monitorado
 1. **Lista** os políticos salvos no banco local (nome, partido, UF).
 2. **Cadastra** um novo político por um formulário (BottomSheet) com validação.
 3. **Pesquisa** por nome, partido ou UF (filtro em tempo real).
-4. **Remove** um político (com diálogo de confirmação).
-5. **Alterna o tema** claro/escuro pela AppBar — e **lembra a escolha** na próxima abertura (SharedPreferences).
-6. Mostra um **indicador "SQLite ativo"** na AppBar e **SnackBars** de feedback ao salvar/remover.
+4. **Edita** um político (toque no lápis ou no card) — mesmo formulário, pré-preenchido.
+5. **Remove** um político (com diálogo de confirmação).
+6. **Alterna o tema** claro/escuro pela AppBar — e **lembra a escolha** na próxima abertura (SharedPreferences).
+7. Mostra um **indicador "SQLite ativo"** na AppBar e **SnackBars** de feedback ao salvar/editar/remover.
+
+> O app cobre o **CRUD completo**: Create (cadastrar), Read (listar/pesquisar), Update (editar) e Delete (remover).
 
 ### Estados da tela (via `FutureBuilder`)
 
@@ -116,13 +119,13 @@ flutter test
 Saída esperada:
 
 ```
-00:02 +5: All tests passed!
+00:02 +8: All tests passed!
 ```
 
 Os testes cobrem:
-1. **CRUD real no SQLite** (insere → lista → remove).
+1. **CRUD real no SQLite** (insere → lista → atualiza → remove).
 2. **Mapeamento do modelo** (`toMap`/`fromMap` simétricos).
-3. **UI**: estado vazio, lista com dados e filtro de busca (com repositório fake).
+3. **UI**: estado vazio, lista com dados, filtro de busca, cadastro e edição (com repositório fake).
 
 Para checar o código estático (lint):
 
