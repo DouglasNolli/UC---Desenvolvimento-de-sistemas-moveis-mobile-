@@ -7,7 +7,17 @@ Aplicativo Flutter didático que demonstra, na prática, **Persistência de Dado
 | **SQLite** | Dados estruturados: o CRUD de políticos (tabela relacional) | [`sqflite`](https://pub.dev/packages/sqflite) + [`path`](https://pub.dev/packages/path) |
 | **SharedPreferences** | Configuração chave-valor: o tema (claro/escuro) | [`shared_preferences`](https://pub.dev/packages/shared_preferences) |
 
-O usuário pode **cadastrar, listar, pesquisar e remover** políticos monitorados — tudo salvo **offline** no dispositivo.
+O usuário pode **cadastrar, listar, pesquisar, editar e remover** políticos monitorados — tudo salvo **offline** no dispositivo.
+
+---
+
+## 🎬 Demonstração
+
+O GIF abaixo mostra o app rodando em um emulador Android: cadastro de dois políticos, pesquisa, edição (alterando o partido), alternância de tema (claro/escuro) e remoção com confirmação — tudo persistido no SQLite local.
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Demonstração do Portal Cidadão" width="300"/>
+</p>
 
 ---
 
