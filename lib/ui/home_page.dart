@@ -157,16 +157,27 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primaryContainer,
-        title: const Text('Minha Cinemateca'),
+        // titleSpacing menor + fonte reduzida para o nome caber ao lado do
+        // chip mesmo em telas estreitas (sem reticências).
+        titleSpacing: 12,
+        title: const Text(
+          'Minha Cinemateca',
+          style: TextStyle(fontSize: 19),
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           // Indicador visual de banco local ativo.
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Chip(
               avatar: Icon(Icons.storage,
-                  size: 18, color: theme.colorScheme.primary),
+                  size: 15, color: theme.colorScheme.primary),
               label: const Text('SQLite ativo'),
+              labelStyle: const TextStyle(fontSize: 11),
+              labelPadding: const EdgeInsets.only(left: 2, right: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
           // Alternar tema (persiste no SharedPreferences via callback).

@@ -197,6 +197,10 @@ void main() {
     test('a sigla do avatar ignora artigos e preposições', () {
       expect(FilmeCard.siglaTitulo('Cidade de Deus'), 'CD');
       expect(FilmeCard.siglaTitulo('Matrix'), 'MA');
+      // Sobrando uma palavra só, usa duas letras dela (e não um "O" solto).
+      expect(FilmeCard.siglaTitulo('A Origem'), 'OR');
+      // Título formado apenas por conectores: cai para as próprias palavras.
+      expect(FilmeCard.siglaTitulo('O e A'), 'OEA');
       expect(FilmeCard.siglaTitulo(''), '?');
     });
   });

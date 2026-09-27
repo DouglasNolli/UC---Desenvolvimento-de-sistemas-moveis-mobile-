@@ -76,16 +76,18 @@ class FilmeCard extends StatelessWidget {
         .toList();
     if (palavras.isEmpty) return '?';
 
-    // Uma só palavra: usa as duas primeiras letras dela.
-    if (palavras.length == 1) {
-      final unica = palavras.first;
-      return unica.substring(0, unica.length >= 2 ? 2 : 1).toUpperCase();
-    }
-
-    // Várias palavras: iniciais das palavras "fortes" (sem artigos/preposições).
+    // Iniciais das palavras "fortes" (sem artigos/preposições).
     final fortes =
         palavras.where((w) => !conectores.contains(w.toLowerCase())).toList();
     final base = fortes.isEmpty ? palavras : fortes;
+
+    // Sobrou uma palavra só ("Matrix", ou "A Origem" sem o artigo): usa as
+    // duas primeiras letras dela, para o avatar não ficar com uma letra solta.
+    if (base.length == 1) {
+      final unica = base.first;
+      return unica.substring(0, unica.length >= 2 ? 2 : 1).toUpperCase();
+    }
+
     return base.map((w) => w[0].toUpperCase()).take(3).join();
   }
 }
