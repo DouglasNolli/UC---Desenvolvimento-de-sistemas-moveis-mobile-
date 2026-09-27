@@ -1,20 +1,20 @@
 // =============================================================================
-// WIDGET — PoliticoCard
+// WIDGET — FilmeCard
 // -----------------------------------------------------------------------------
-// Representa UM político na lista: Card + ListTile + avatar com a sigla do
-// partido + botão de lixeira. Recebe callbacks para não acoplar à HomePage.
+// Representa UM filme na lista: Card + ListTile + avatar com a sigla do título
+// + botões de editar e remover. Recebe callbacks para não acoplar à HomePage.
 // =============================================================================
 import 'package:flutter/material.dart';
-import '../../models/politico_model.dart';
+import '../../models/filme_model.dart';
 
-class PoliticoCard extends StatelessWidget {
-  final PoliticoModel politico;
+class FilmeCard extends StatelessWidget {
+  final FilmeModel filme;
   final VoidCallback onRemover;
   final VoidCallback onEditar;
 
-  const PoliticoCard({
+  const FilmeCard({
     super.key,
-    required this.politico,
+    required this.filme,
     required this.onRemover,
     required this.onEditar,
   });
@@ -33,15 +33,15 @@ class PoliticoCard extends StatelessWidget {
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
           child: Text(
-            _siglaPartido(politico.partido),
+            siglaTitulo(filme.titulo),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ),
         title: Text(
-          politico.nome,
+          filme.titulo,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text('${politico.partido} • ${politico.uf}'),
+        subtitle: Text('${filme.diretor} • ${filme.genero} • ${filme.ano}'),
         // Dois botões: editar (lápis) e remover (lixeira).
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -62,17 +62,30 @@ class PoliticoCard extends StatelessWidget {
     );
   }
 
-  /// Gera sigla curta a partir do nome do partido para o avatar.
-  /// Ex.: "Partido Verde" -> "PV"; "PT" -> "PT".
-  static String _siglaPartido(String partido) {
-    final limpo = partido.trim();
-    if (limpo.isEmpty) return '?';
-    final palavras =
-        limpo.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  /// Gera uma sigla curta a partir do título para exibir no avatar.
+  /// Ex.: "Cidade de Deus" -> "CD" (artigos e preposições são ignorados);
+  ///      "Matrix"         -> "MA" (título de uma palavra usa 2 letras).
+  static String siglaTitulo(String titulo) {
+    const conectores = {'de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'os',
+                        'as', 'em', 'no', 'na', 'um', 'uma', 'the', 'of'};
+
+    final palavras = titulo
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (palavras.isEmpty) return '?';
+
+    // Uma só palavra: usa as duas primeiras letras dela.
     if (palavras.length == 1) {
       final unica = palavras.first;
       return unica.substring(0, unica.length >= 2 ? 2 : 1).toUpperCase();
     }
-    return palavras.map((w) => w[0].toUpperCase()).take(3).join();
+
+    // Várias palavras: iniciais das palavras "fortes" (sem artigos/preposições).
+    final fortes =
+        palavras.where((w) => !conectores.contains(w.toLowerCase())).toList();
+    final base = fortes.isEmpty ? palavras : fortes;
+    return base.map((w) => w[0].toUpperCase()).take(3).join();
   }
 }

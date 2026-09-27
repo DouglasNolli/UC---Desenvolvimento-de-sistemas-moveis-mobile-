@@ -3,28 +3,37 @@
 // -----------------------------------------------------------------------------
 // Orquestra a UI: dispara a leitura do banco (Future) e a desenha com
 // FutureBuilder, abre o formulário, filtra a busca e remove registros.
-// Toda persistência é delegada ao PoliticoRepository — a tela não conhece SQL.
+// Toda persistência é delegada ao FilmeRepository — a tela não conhece SQL.
+//
+// Além disso, esta tela LÊ e GRAVA a nova preferência (último termo de busca):
+// abre já filtrada pelo termo da sessão anterior e salva cada alteração do
+// campo de pesquisa via BuscaPreferences.
 // =============================================================================
 import 'package:flutter/material.dart';
 
-import '../data/i_politico_repository.dart';
-import '../data/politico_repository.dart';
-import '../models/politico_model.dart';
+import '../data/busca_preferences.dart';
+import '../data/filme_repository.dart';
+import '../data/i_filme_repository.dart';
+import '../models/filme_model.dart';
 import 'widgets/empty_state.dart';
-import 'widgets/politico_card.dart';
-import 'widgets/politico_form.dart';
+import 'widgets/filme_card.dart';
+import 'widgets/filme_form.dart';
 
 class HomePage extends StatefulWidget {
   final bool isDarkMode;
   final Future<void> Function() onAlternarTema;
 
+  /// Termo de busca restaurado do SharedPreferences (vem do main()).
+  final String termoBuscaInicial;
+
   /// Repositório injetável. Em produção usa o SQLite; em testes, um fake.
-  final IPoliticoRepository? repository;
+  final IFilmeRepository? repository;
 
   const HomePage({
     super.key,
     required this.isDarkMode,
     required this.onAlternarTema,
+    this.termoBuscaInicial = '',
     this.repository,
   });
 
@@ -33,19 +42,31 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final IPoliticoRepository _repository =
-      widget.repository ?? PoliticoRepository();
+  late final IFilmeRepository _repository =
+      widget.repository ?? FilmeRepository();
+
+  // Wrapper da nova preferência (mesmo padrão do ThemePreferences).
+  final BuscaPreferences _buscaPrefs = BuscaPreferences();
 
   // O Future observado pelo FutureBuilder. Trocá-lo força uma releitura.
-  late Future<List<PoliticoModel>> _futurePoliticos;
+  late Future<List<FilmeModel>> _futureFilmes;
 
-  String _termoBusca = '';
-  final TextEditingController _buscaController = TextEditingController();
+  late String _termoBusca;
+  late final TextEditingController _buscaController;
+
+  /// True enquanto o filtro exibido ainda for o que veio do disco. Serve apenas
+  /// para mostrar o aviso "busca restaurada" e provar a persistência na tela.
+  late bool _buscaRestaurada;
 
   @override
   void initState() {
     super.initState();
-    _futurePoliticos = _repository.getAll(); // primeira leitura
+    // A tela JÁ NASCE com o último termo pesquisado pelo usuário.
+    _termoBusca = widget.termoBuscaInicial;
+    _buscaController = TextEditingController(text: widget.termoBuscaInicial);
+    _buscaRestaurada = widget.termoBuscaInicial.trim().isNotEmpty;
+
+    _futureFilmes = _repository.getAll(); // primeira leitura
   }
 
   @override
@@ -57,12 +78,21 @@ class _HomePageState extends State<HomePage> {
   /// Reatribui o Future -> o FutureBuilder relê o banco.
   void _recarregar() {
     // IMPORTANTE: usar corpo de bloco `{ }` e NÃO `=>`.
-    // Com arrow (`=> _futurePoliticos = ...`) o callback RETORNA o valor da
+    // Com arrow (`=> _futureFilmes = ...`) o callback RETORNA o valor da
     // atribuição (um Future), e o setState rejeita callbacks que retornam
     // Future — lançando exceção e deixando de aplicar a atualização.
     setState(() {
-      _futurePoliticos = _repository.getAll();
+      _futureFilmes = _repository.getAll();
     });
+  }
+
+  /// Atualiza o filtro na tela E persiste o termo no SharedPreferences.
+  Future<void> _aplicarBusca(String termo) async {
+    setState(() {
+      _termoBusca = termo;
+      _buscaRestaurada = false; // o usuário assumiu o controle do campo
+    });
+    await _buscaPrefs.saveUltimoTermo(termo);
   }
 
   void _mostrarSnack(String mensagem) {
@@ -78,29 +108,29 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _abrirFormulario() async {
-    final novo = await PoliticoForm.mostrar(context);
+    final novo = await FilmeForm.mostrar(context);
     if (novo == null) return;
     await _repository.insert(novo);
-    _mostrarSnack('✅ "${novo.nome}" salvo no banco offline.');
+    _mostrarSnack('🎬 "${novo.titulo}" salvo no banco offline.');
     _recarregar();
   }
 
   /// Abre o formulário em modo EDIÇÃO (pré-preenchido) e aplica o UPDATE.
-  Future<void> _editar(PoliticoModel politico) async {
-    final editado = await PoliticoForm.mostrar(context, politico: politico);
+  Future<void> _editar(FilmeModel filme) async {
+    final editado = await FilmeForm.mostrar(context, filme: filme);
     if (editado == null) return;
     await _repository.update(editado);
-    _mostrarSnack('✏️ "${editado.nome}" atualizado no banco offline.');
+    _mostrarSnack('✏️ "${editado.titulo}" atualizado no banco offline.');
     _recarregar();
   }
 
-  Future<void> _confirmarRemocao(PoliticoModel politico) async {
+  Future<void> _confirmarRemocao(FilmeModel filme) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Remover político?'),
+        title: const Text('Remover filme?'),
         content:
-            Text('Deseja remover "${politico.nome}" do banco de dados local?'),
+            Text('Deseja remover "${filme.titulo}" do banco de dados local?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -113,9 +143,9 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-    if (confirmar == true && politico.id != null) {
-      await _repository.delete(politico.id!);
-      _mostrarSnack('🗑️ "${politico.nome}" removido do banco offline.');
+    if (confirmar == true && filme.id != null) {
+      await _repository.delete(filme.id!);
+      _mostrarSnack('🗑️ "${filme.titulo}" removido do banco offline.');
       _recarregar();
     }
   }
@@ -127,7 +157,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primaryContainer,
-        title: const Text('Portal Cidadão'),
+        title: const Text('Minha Cinemateca'),
         actions: [
           // Indicador visual de banco local ativo.
           Padding(
@@ -144,8 +174,7 @@ class _HomePageState extends State<HomePage> {
             tooltip: widget.isDarkMode
                 ? 'Mudar para Modo Claro'
                 : 'Mudar para Modo Escuro',
-            icon: Icon(
-                widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: widget.onAlternarTema,
           ),
         ],
@@ -158,14 +187,16 @@ class _HomePageState extends State<HomePage> {
             child: TextField(
               controller: _buscaController,
               decoration: InputDecoration(
-                hintText: 'Pesquisar por nome, partido ou UF...',
+                hintText: 'Pesquisar por título, diretor, gênero ou ano...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _termoBusca.isNotEmpty
                     ? IconButton(
+                        tooltip: 'Limpar busca',
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _buscaController.clear();
-                          setState(() => _termoBusca = '');
+                          // Limpa também a preferência salva.
+                          _aplicarBusca('');
                         },
                       )
                     : null,
@@ -173,16 +204,37 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onChanged: (v) => setState(() => _termoBusca = v),
+              onChanged: _aplicarBusca, // filtra E persiste
             ),
           ),
+
+          // Prova visual da nova preferência: aparece quando o app abre já com
+          // o termo da sessão anterior restaurado do disco.
+          if (_buscaRestaurada)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.bookmark_added_outlined,
+                      size: 16, color: theme.colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Busca restaurada da última sessão',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.primary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // ------------------------------------------------------------------
           // FUTUREBUILDER — leitura assíncrona do banco com seus 4 estados.
           // ------------------------------------------------------------------
           Expanded(
-            child: FutureBuilder<List<PoliticoModel>>(
-              future: _futurePoliticos,
+            child: FutureBuilder<List<FilmeModel>>(
+              future: _futureFilmes,
               builder: (context, snapshot) {
                 // 1) CARREGANDO
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -199,25 +251,26 @@ class _HomePageState extends State<HomePage> {
                 }
 
                 // Filtro de busca em memória.
-                final todos = snapshot.data ?? const <PoliticoModel>[];
+                final todos = snapshot.data ?? const <FilmeModel>[];
                 final termo = _termoBusca.trim().toLowerCase();
                 final lista = termo.isEmpty
                     ? todos
                     : todos
-                        .where((p) =>
-                            p.nome.toLowerCase().contains(termo) ||
-                            p.partido.toLowerCase().contains(termo) ||
-                            p.uf.toLowerCase().contains(termo))
+                        .where((f) =>
+                            f.titulo.toLowerCase().contains(termo) ||
+                            f.diretor.toLowerCase().contains(termo) ||
+                            f.genero.toLowerCase().contains(termo) ||
+                            f.ano.toString().contains(termo))
                         .toList();
 
                 // 3) VAZIO
                 if (lista.isEmpty) {
                   return EmptyState(
                     icone: termo.isEmpty
-                        ? Icons.smart_toy_outlined
+                        ? Icons.movie_filter_outlined
                         : Icons.search_off,
                     titulo: termo.isEmpty
-                        ? 'Nenhum político salvo offline'
+                        ? 'Nenhum filme salvo offline'
                         : 'Nenhum resultado para "$_termoBusca"',
                     subtitulo: termo.isEmpty
                         ? 'Toque no botão + para cadastrar o primeiro.'
@@ -230,11 +283,11 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
                   itemCount: lista.length,
                   itemBuilder: (context, index) {
-                    final politico = lista[index];
-                    return PoliticoCard(
-                      politico: politico,
-                      onEditar: () => _editar(politico),
-                      onRemover: () => _confirmarRemocao(politico),
+                    final filme = lista[index];
+                    return FilmeCard(
+                      filme: filme,
+                      onEditar: () => _editar(filme),
+                      onRemover: () => _confirmarRemocao(filme),
                     );
                   },
                 );
@@ -246,7 +299,7 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _abrirFormulario,
         icon: const Icon(Icons.add),
-        label: const Text('Novo político'),
+        label: const Text('Novo filme'),
       ),
     );
   }

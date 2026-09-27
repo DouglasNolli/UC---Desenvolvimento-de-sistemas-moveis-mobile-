@@ -1,32 +1,39 @@
 // =============================================================================
-// WIDGET RAIZ — PortalCidadaoApp
+// WIDGET RAIZ — MinhaCinematecaApp
 // -----------------------------------------------------------------------------
 // Configura o MaterialApp e gerencia o estado do TEMA (claro/escuro),
 // persistindo cada alternância no SharedPreferences via ThemePreferences.
+//
+// Recebe também o `termoBuscaInicial` lido do SharedPreferences no main() e
+// o repassa para a HomePage, que já abre com o filtro da última sessão.
 // =============================================================================
 import 'package:flutter/material.dart';
 
-import 'data/i_politico_repository.dart';
-import 'data/theme_preferences.dart';
+import 'data/i_filme_repository.dart';
 import 'ui/home_page.dart';
+import 'data/theme_preferences.dart';
 
-class PortalCidadaoApp extends StatefulWidget {
+class MinhaCinematecaApp extends StatefulWidget {
   final bool temaInicialEscuro;
 
-  /// Repositório injetável (opcional). Usado nos testes de UI.
-  final IPoliticoRepository? repository;
+  /// ⭐ Último termo de busca restaurado do SharedPreferences.
+  final String termoBuscaInicial;
 
-  const PortalCidadaoApp({
+  /// Repositório injetável (opcional). Usado nos testes de UI.
+  final IFilmeRepository? repository;
+
+  const MinhaCinematecaApp({
     super.key,
     required this.temaInicialEscuro,
+    this.termoBuscaInicial = '',
     this.repository,
   });
 
   @override
-  State<PortalCidadaoApp> createState() => _PortalCidadaoAppState();
+  State<MinhaCinematecaApp> createState() => _MinhaCinematecaAppState();
 }
 
-class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
+class _MinhaCinematecaAppState extends State<MinhaCinematecaApp> {
   final ThemePreferences _themePrefs = ThemePreferences();
   late bool _isDarkMode;
 
@@ -44,10 +51,11 @@ class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
 
   @override
   Widget build(BuildContext context) {
-    const Color seed = Color(0xFF1565C0);
+    // Roxo "cortina de cinema" como cor semente do Material 3.
+    const Color seed = Color(0xFF6A1B9A);
 
     return MaterialApp(
-      title: 'Portal Cidadão',
+      title: 'Minha Cinemateca',
       debugShowCheckedModeBanner: false,
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
@@ -64,6 +72,7 @@ class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
       home: HomePage(
         isDarkMode: _isDarkMode,
         onAlternarTema: _alternarTema,
+        termoBuscaInicial: widget.termoBuscaInicial,
         repository: widget.repository,
       ),
     );
