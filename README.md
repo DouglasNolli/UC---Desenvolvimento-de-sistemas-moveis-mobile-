@@ -15,7 +15,16 @@ O usuário pode **cadastrar, listar, pesquisar, editar e remover** filmes da sua
 
 ## 🎬 Demonstração
 
-O GIF abaixo mostra o app rodando em um emulador Android: cadastro de filmes, pesquisa, edição, alternância de tema (claro/escuro) e remoção com confirmação — tudo persistido no SQLite local.
+O GIF abaixo mostra o app rodando em um emulador Android (Pixel 4, Android 17), na ordem:
+
+1. cadastro de três filmes pelo formulário (**Create**);
+2. listagem em ordem alfabética, vinda do SQLite (**Read**);
+3. pesquisa por `nolan` — que filtra pelo **diretor**, não só pelo título;
+4. troca para o tema escuro;
+5. **o app é fechado pela tecla Home e o processo é encerrado de verdade**;
+6. ao reabrir, o tema escuro **e** a pesquisa `nolan` voltam sozinhos, com o aviso *"Busca restaurada da última sessão"* — são as duas SharedPreferences em ação;
+7. edição do gênero de um filme, do card já na lista (**Update**);
+8. remoção com diálogo de confirmação (**Delete**).
 
 <p align="center">
   <img src="docs/demo.gif" alt="Demonstração do Minha Cinemateca" width="300"/>
